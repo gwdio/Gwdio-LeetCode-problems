@@ -7,6 +7,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Note:
+ * This system is designed to maximize the user experience, meaning that it 
+ * trades slower writes with much faster reads. The logic is when a post is
+ * made, many of the followers of that post will not be currently scrolling
+ * the top of the feed, so the client will not notice if a tweet is pushed to
+ * them a little bit later.
+ * 
+ * Therefore, this system holds on to a user's feed on the user side, so when
+ * a request for the feed is made, it already exists and the process is effectively
+ * instant. The tradeoff is that making a post takes longer, and based on the
+ * design, this ends up being slower assuming chained requests like this problem
+ * describes.
+ * 
+ * However, if you assume a testcase that discounts up to 10 ms of processing time,
+ * like seen below
+ * 
+ * <pre>
+ *  Program: Post 
+ *  Timer: Wait up to 10ms, then ClockStarts
+ *  Program: GetFeed
+ * </pre>
+ * 
+ * Then the below implementation will be much faster.
+ * 
+ * This is more of a real use case, substituting 10 ms for the acceptable time of 
+ * delay between a post and receiving a response in this toy model.
+ * 
+ * The current implementation still has all users keep a very long chain of messages,
+ * meaning that receiving a post is as fast as can be O(numfollowers), and getting
+ * a feed is near-instant O(1), but subscribing and unsubscribing both take 
+ * O(yourPosts + theirPosts) time, which is quite bad, but acceptable considering
+ * subscribing is much rarer than all the other operations.
+ */
 @SuppressWarnings("unused")
 class Twitter {
     private final Map<Integer, User> users;
